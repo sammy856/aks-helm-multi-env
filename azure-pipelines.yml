@@ -206,7 +206,7 @@ stages:
               overrideValues: |
                 image.repository=$(acrLoginServer)/$(imageRepository)
                 image.tag=$(imageTag)
-              arguments: '--install --create-namespace --wait --timeout 5m'
+              # arguments: '--install --create-namespace --wait --timeout 5m'
 
 
 # ==========================================
