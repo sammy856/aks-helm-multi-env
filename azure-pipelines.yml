@@ -68,7 +68,7 @@ stages:
               chartPath: '$(System.DefaultWorkingDirectory)/$(helmChartPath)'
               releaseName: 'axionui-dev-release'
               overrideValues: 'image.tag=$(Build.BuildId)'
-              arguments: '--install -f $(System.DefaultWorkingDirectory)/$(helmChartPath)/values.dev.yaml'
+              arguments: '--install --create-namespace -f $(System.DefaultWorkingDirectory)/$(helmChartPath)/values.dev.yaml'
 
 - stage: DeployToQA
   displayName: Deploy to QA
@@ -100,7 +100,7 @@ stages:
               chartPath: '$(System.DefaultWorkingDirectory)/$(helmChartPath)'
               releaseName: 'axion-qa-release'
               overrideValues: 'image.tag=$(Build.BuildId)'
-              arguments: '--install -f $(System.DefaultWorkingDirectory)/$(helmChartPath)/values.qa.yaml'
+              arguments: '--install --create-namespace -f $(System.DefaultWorkingDirectory)/$(helmChartPath)/values.qa.yaml'
 
 
 
