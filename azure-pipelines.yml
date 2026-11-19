@@ -7,7 +7,7 @@ pool:
 variables:
   imageRepository: 'axionui-app' # The name of your Docker image in ACR
   dockerRegistryServiceConnection: 'myacrconnection' # Your Azure Container Registry service connection name
-  aksServiceConnection: 'aks service connection' # Your AKS cluster service connection name
+  aksServiceConnection: 'aksserviceconnection' # Your AKS cluster service connection name
   helmChartPath: 'helm/my-app' # Path to Helm chart in repo
 
 stages:
