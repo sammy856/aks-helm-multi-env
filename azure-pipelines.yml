@@ -39,7 +39,7 @@ stages:
   condition: succeeded()
   jobs:
   - deployment: DeployJob
-    displayName: Deploy with Helm to AKS
+    displayName: Deploy with Helm to AKS to dev
     environment: 'Dev-aks'
     strategy:
       runOnce:
@@ -55,15 +55,15 @@ stages:
           - task: HelmDeploy@0
             displayName: Helm Upgrade/Install (Dev)
             inputs:
-              azureSubscription: '$(aksServiceConnection)'
-              azureResourceGroup: 'demo'
-              kubernetesCluster: 'my-aks-cluster'
+              connectionType: 'Kubernetes Service Connection'
+              kubernetesServiceConnection: 'aksserviceconnection'
+              namespace: 'dev'
               command: 'upgrade'
               chartType: 'FilePath'
               chartPath: '$(System.DefaultWorkingDirectory)/$(helmChartPath)'
-              releaseName: 'my-app-dev'
-              arguments: '--install -f $(System.DefaultWorkingDirectory)/$(helmChartPath)/values.dev.yaml'
+              releaseName: 'axionui-dev-release'
               overrideValues: 'image.tag=$(Build.BuildId)'
+              arguments: '--install -f $(System.DefaultWorkingDirectory)/$(helmChartPath)/values.dev.yaml'
 
 - stage: DeployToQA
   displayName: Deploy to QA
@@ -87,12 +87,12 @@ stages:
           - task: HelmDeploy@0
             displayName: Helm Upgrade/Install (QA)
             inputs:
-              azureSubscription: '$(aksServiceConnection)'
-              azureResourceGroup: 'demo'
-              kubernetesCluster: 'my-aks-cluster'
+              connectionType: 'Kubernetes Service Connection'
+              kubernetesServiceConnection: 'aksserviceconnection'
+              namespace: 'qa'
               command: 'upgrade'
               chartType: 'FilePath'
               chartPath: '$(System.DefaultWorkingDirectory)/$(helmChartPath)'
-              releaseName: 'my-app-qa'
-              arguments: '--install -f $(System.DefaultWorkingDirectory)/$(helmChartPath)/values.qa.yaml'
+              releaseName: 'axion-qa-release'
               overrideValues: 'image.tag=$(Build.BuildId)'
+              arguments: '--install -f $(System.DefaultWorkingDirectory)/$(helmChartPath)/values.qa.yaml'
