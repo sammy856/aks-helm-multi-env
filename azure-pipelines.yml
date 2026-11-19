@@ -1,158 +1,28 @@
-# trigger:
-#   - none
-
-# pool:
-#   vmImage: 'ubuntu-latest'
-
-# variables:
-#   imageRepository: 'axionui-app' # The name of your Docker image in ACR
-#   dockerRegistryServiceConnection: 'myacrconnection' # Your Azure Container Registry service connection name
-#   aksServiceConnection: 'aksserviceconnection' # Your AKS cluster service connection name
-#   helmChartPath: 'helm/my-app' # Path to Helm chart in repo
-
-# stages:
-# - stage: Build
-#   displayName: Build and Push Docker Image
-#   jobs:
-#   - job: BuildJob
-#     displayName: Build Container
-#     steps:
-#     - task: Docker@2
-#       inputs:
-#         containerRegistry: '$(dockerRegistryServiceConnection)'
-#         command: 'login'
-#     - task: Docker@2
-#       displayName: Build and Push Docker Image
-#       inputs:
-#         containerRegistry: '$(dockerRegistryServiceConnection)'
-#         repository: '$(imageRepository)'
-#         command: 'buildAndPush'
-#         Dockerfile: '$(Build.SourcesDirectory)/axion-ui/Dockerfile'
-#         buildContext: '$(Build.SourcesDirectory)/axion-ui'
-#         tags: |
-#           $(Build.BuildId)
-#           latest
-
-#     - task: HelmInstaller@1
-#       displayName: Install Helm
-#       inputs:
-#         helmVersionToInstall: '3.11.0'
-
-# - stage: DeployToDev
-#   displayName: Deploy to Dev
-#   dependsOn: Build
-#   condition: succeeded()
-#   jobs:
-#   - deployment: DeployJob
-#     displayName: Deploy with Helm to AKS to dev
-#     environment: 'Dev-aks'
-#     strategy:
-#       runOnce:
-#         deploy:
-#           steps:
-#           - checkout: self
-#             persistCredentials: true
-#           - task: HelmInstaller@1
-#             displayName: Install Helm on Agent
-#             inputs:
-#               helmVersionToInstall: '3.11.0'
-
-#           - task: HelmDeploy@0
-#             displayName: Helm Upgrade/Install (Dev)
-#             inputs:
-#               connectionType: 'Kubernetes Service Connection'
-#               kubernetesServiceConnection: 'aksserviceconnection'
-#               namespace: 'dev'
-#               command: 'upgrade'
-#               chartType: 'FilePath'
-#               chartPath: '$(System.DefaultWorkingDirectory)/$(helmChartPath)'
-#               releaseName: 'axionui-dev-release'
-#               overrideValues: 'image.tag=$(Build.BuildId)'
-#               arguments: '--install -f $(System.DefaultWorkingDirectory)/$(helmChartPath)/values.dev.yaml'
-
-# - stage: DeployToQA
-#   displayName: Deploy to QA
-#   dependsOn: DeployToDev
-#   condition: succeeded()
-#   jobs:
-#   - deployment: DeployQAJob
-#     displayName: Deploy with Helm to AKS
-#     environment: 'QA-aks'
-#     strategy:
-#       runOnce:
-#         deploy:
-#           steps:
-#           - checkout: self
-#             persistCredentials: true
-#           - task: HelmInstaller@1
-#             displayName: Install Helm on Agent
-#             inputs:
-#               helmVersionToInstall: '3.11.0'
-
-#           - task: HelmDeploy@0
-#             displayName: Helm Upgrade/Install (QA)
-#             inputs:
-#               connectionType: 'Kubernetes Service Connection'
-#               kubernetesServiceConnection: 'aksserviceconnection'
-#               namespace: 'qa'
-#               command: 'upgrade'
-#               chartType: 'FilePath'
-#               chartPath: '$(System.DefaultWorkingDirectory)/$(helmChartPath)'
-#               releaseName: 'axion-qa-release'
-#               overrideValues: 'image.tag=$(Build.BuildId)'
-#               arguments: '--install -f $(System.DefaultWorkingDirectory)/$(helmChartPath)/values.qa.yaml'
-
-
-
-
-
-
-trigger: none
+trigger:
+  - none
 
 pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  imageRepository: 'axionui-app'
-  dockerHubServiceConnection: 'myacrconnection'
-  dockerRegistryServiceConnection: 'myacrconnection'
-  aksServiceConnection: 'aksserviceconnection'
-  acrLoginServer: 'sammyacr.azurecr.io'
-  helmChartPath: 'helm/my-app'
-  imageTag: '$(Build.BuildId)'
+  imageRepository: 'axionui-app' # The name of your Docker image in ACR
+  dockerRegistryServiceConnection: 'myacrconnection' # Your Azure Container Registry service connection name
+  aksServiceConnection: 'aksserviceconnection' # Your AKS cluster service connection name
+  helmChartPath: 'helm/my-app' # Path to Helm chart in repo
 
 stages:
-
-# ==========================================
-# STAGE 1: BUILD AND PUSH DOCKER IMAGE
-# ==========================================
-
 - stage: Build
   displayName: Build and Push Docker Image
-
   jobs:
   - job: BuildJob
     displayName: Build Container
-
     steps:
-
-    # Login to Docker Hub for base images
-    - task: Bash@3
-      displayName: Test Docker Hub Images
-      inputs:
-        targetType: inline
-        script: |
-          echo "Testing Node image..."
-          docker pull node:22-alpine
-
-          echo "Testing Nginx image..."
-          docker pull nginx:alpine
-
-          echo "Both images pulled successfully"
-
-    # Build and Push image to ACR
     - task: Docker@2
-      displayName: Build and Push to ACR
+      inputs:
+        containerRegistry: '$(dockerRegistryServiceConnection)'
+        command: 'login'
+    - task: Docker@2
+      displayName: Build and Push Docker Image
       inputs:
         containerRegistry: '$(dockerRegistryServiceConnection)'
         repository: '$(imageRepository)'
@@ -160,95 +30,225 @@ stages:
         Dockerfile: '$(Build.SourcesDirectory)/axion-ui/Dockerfile'
         buildContext: '$(Build.SourcesDirectory)/axion-ui'
         tags: |
-          $(imageTag)
+          $(Build.BuildId)
           latest
 
-
-# ==========================================
-# STAGE 2: DEPLOY TO DEV
-# ==========================================
+    - task: HelmInstaller@1
+      displayName: Install Helm
+      inputs:
+        helmVersionToInstall: '3.11.0'
 
 - stage: DeployToDev
   displayName: Deploy to Dev
-
   dependsOn: Build
   condition: succeeded()
-
   jobs:
   - deployment: DeployJob
-    displayName: Deploy Application to Dev
-
+    displayName: Deploy with Helm to AKS to dev
     environment: 'Dev-aks'
-
     strategy:
       runOnce:
         deploy:
           steps:
-
           - checkout: self
-
+            persistCredentials: true
           - task: HelmInstaller@1
-            displayName: Install Helm
+            displayName: Install Helm on Agent
             inputs:
               helmVersionToInstall: '3.11.0'
 
           - task: HelmDeploy@0
-            displayName: Helm Upgrade/Install Dev
+            displayName: Helm Upgrade/Install (Dev)
             inputs:
               connectionType: 'Kubernetes Service Connection'
-              kubernetesServiceConnection: '$(aksServiceConnection)'
+              kubernetesServiceConnection: 'aksserviceconnection'
               namespace: 'dev'
               command: 'upgrade'
               chartType: 'FilePath'
               chartPath: '$(System.DefaultWorkingDirectory)/$(helmChartPath)'
               releaseName: 'axionui-dev-release'
-              valueFile: '$(System.DefaultWorkingDirectory)/$(helmChartPath)/values.dev.yaml'
-              overrideValues: |
-                image.repository=$(acrLoginServer)/$(imageRepository)
-                image.tag=$(imageTag)
-              # arguments: '--install --create-namespace --wait --timeout 5m'
-
-
-# ==========================================
-# STAGE 3: DEPLOY TO QA
-# ==========================================
+              overrideValues: 'image.tag=$(Build.BuildId)'
+              arguments: '--install -f $(System.DefaultWorkingDirectory)/$(helmChartPath)/values.dev.yaml'
 
 - stage: DeployToQA
   displayName: Deploy to QA
-
   dependsOn: DeployToDev
   condition: succeeded()
-
   jobs:
   - deployment: DeployQAJob
-    displayName: Deploy Application to QA
-
+    displayName: Deploy with Helm to AKS
     environment: 'QA-aks'
-
     strategy:
       runOnce:
         deploy:
           steps:
-
           - checkout: self
-
+            persistCredentials: true
           - task: HelmInstaller@1
-            displayName: Install Helm
+            displayName: Install Helm on Agent
             inputs:
               helmVersionToInstall: '3.11.0'
 
           - task: HelmDeploy@0
-            displayName: Helm Upgrade/Install QA
+            displayName: Helm Upgrade/Install (QA)
             inputs:
               connectionType: 'Kubernetes Service Connection'
-              kubernetesServiceConnection: '$(aksServiceConnection)'
+              kubernetesServiceConnection: 'aksserviceconnection'
               namespace: 'qa'
               command: 'upgrade'
               chartType: 'FilePath'
               chartPath: '$(System.DefaultWorkingDirectory)/$(helmChartPath)'
-              releaseName: 'axionui-qa-release'
-              valueFile: '$(System.DefaultWorkingDirectory)/$(helmChartPath)/values.qa.yaml'
-              overrideValues: |
-                image.repository=$(acrLoginServer)/$(imageRepository)
-                image.tag=$(imageTag)
-              arguments: '--install --create-namespace --wait --timeout 5m'
+              releaseName: 'axion-qa-release'
+              overrideValues: 'image.tag=$(Build.BuildId)'
+              arguments: '--install -f $(System.DefaultWorkingDirectory)/$(helmChartPath)/values.qa.yaml'
+
+
+
+
+
+
+# trigger: none
+
+# pool:
+#   vmImage: 'ubuntu-latest'
+
+# variables:
+#   imageRepository: 'axionui-app'
+#   dockerHubServiceConnection: 'myacrconnection'
+#   dockerRegistryServiceConnection: 'myacrconnection'
+#   aksServiceConnection: 'aksserviceconnection'
+#   acrLoginServer: 'sammyacr.azurecr.io'
+#   helmChartPath: 'helm/my-app'
+#   imageTag: '$(Build.BuildId)'
+
+# stages:
+
+# # ==========================================
+# # STAGE 1: BUILD AND PUSH DOCKER IMAGE
+# # ==========================================
+
+# - stage: Build
+#   displayName: Build and Push Docker Image
+
+#   jobs:
+#   - job: BuildJob
+#     displayName: Build Container
+
+#     steps:
+
+#     # Login to Docker Hub for base images
+#     - task: Bash@3
+#       displayName: Test Docker Hub Images
+#       inputs:
+#         targetType: inline
+#         script: |
+#           echo "Testing Node image..."
+#           docker pull node:22-alpine
+
+#           echo "Testing Nginx image..."
+#           docker pull nginx:alpine
+
+#           echo "Both images pulled successfully"
+
+#     # Build and Push image to ACR
+#     - task: Docker@2
+#       displayName: Build and Push to ACR
+#       inputs:
+#         containerRegistry: '$(dockerRegistryServiceConnection)'
+#         repository: '$(imageRepository)'
+#         command: 'buildAndPush'
+#         Dockerfile: '$(Build.SourcesDirectory)/axion-ui/Dockerfile'
+#         buildContext: '$(Build.SourcesDirectory)/axion-ui'
+#         tags: |
+#           $(imageTag)
+#           latest
+
+
+# # ==========================================
+# # STAGE 2: DEPLOY TO DEV
+# # ==========================================
+
+# - stage: DeployToDev
+#   displayName: Deploy to Dev
+
+#   dependsOn: Build
+#   condition: succeeded()
+
+#   jobs:
+#   - deployment: DeployJob
+#     displayName: Deploy Application to Dev
+
+#     environment: 'Dev-aks'
+
+#     strategy:
+#       runOnce:
+#         deploy:
+#           steps:
+
+#           - checkout: self
+
+#           - task: HelmInstaller@1
+#             displayName: Install Helm
+#             inputs:
+#               helmVersionToInstall: '3.11.0'
+
+#           - task: HelmDeploy@0
+#             displayName: Helm Upgrade/Install Dev
+#             inputs:
+#               connectionType: 'Kubernetes Service Connection'
+#               kubernetesServiceConnection: '$(aksServiceConnection)'
+#               namespace: 'dev'
+#               command: 'upgrade'
+#               chartType: 'FilePath'
+#               chartPath: '$(System.DefaultWorkingDirectory)/$(helmChartPath)'
+#               releaseName: 'axionui-dev-release'
+#               valueFile: '$(System.DefaultWorkingDirectory)/$(helmChartPath)/values.dev.yaml'
+#               overrideValues: |
+#                 image.repository=$(acrLoginServer)/$(imageRepository)
+#                 image.tag=$(imageTag)
+#               # arguments: '--install --create-namespace --wait --timeout 5m'
+
+
+# # ==========================================
+# # STAGE 3: DEPLOY TO QA
+# # ==========================================
+
+# - stage: DeployToQA
+#   displayName: Deploy to QA
+
+#   dependsOn: DeployToDev
+#   condition: succeeded()
+
+#   jobs:
+#   - deployment: DeployQAJob
+#     displayName: Deploy Application to QA
+
+#     environment: 'QA-aks'
+
+#     strategy:
+#       runOnce:
+#         deploy:
+#           steps:
+
+#           - checkout: self
+
+#           - task: HelmInstaller@1
+#             displayName: Install Helm
+#             inputs:
+#               helmVersionToInstall: '3.11.0'
+
+#           - task: HelmDeploy@0
+#             displayName: Helm Upgrade/Install QA
+#             inputs:
+#               connectionType: 'Kubernetes Service Connection'
+#               kubernetesServiceConnection: '$(aksServiceConnection)'
+#               namespace: 'qa'
+#               command: 'upgrade'
+#               chartType: 'FilePath'
+#               chartPath: '$(System.DefaultWorkingDirectory)/$(helmChartPath)'
+#               releaseName: 'axionui-qa-release'
+#               valueFile: '$(System.DefaultWorkingDirectory)/$(helmChartPath)/values.qa.yaml'
+#               overrideValues: |
+#                 image.repository=$(acrLoginServer)/$(imageRepository)
+#                 image.tag=$(imageTag)
+#               arguments: '--install --create-namespace --wait --timeout 5m'
