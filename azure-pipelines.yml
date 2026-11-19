@@ -138,19 +138,17 @@ stages:
 
     # Login to Docker Hub for base images
     - task: Bash@3
-      displayName: Check Docker on Azure Agent
+      displayName: Test Docker Hub Images
       inputs:
         targetType: inline
         script: |
-          docker version
-          docker info
-          docker pull hello-world
+          echo "Testing Node image..."
+          docker pull node:22-alpine
 
-    - task: Docker@2
-      displayName: Login to Docker Hub
-      inputs:
-        command: login
-        containerRegistry: '$(dockerHubServiceConnection)'
+          echo "Testing Nginx image..."
+          docker pull nginx:alpine
+
+          echo "Both images pulled successfully"
 
     # Build and Push image to ACR
     - task: Docker@2
