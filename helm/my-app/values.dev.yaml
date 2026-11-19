@@ -12,7 +12,7 @@ service:
 
 # Specify the internal container port
 container:
-  port: 3000
+  port: 80
 
 # Keep the replica count at 1 for dev
 replicaCount: 2
